@@ -2,119 +2,142 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Pelikat Marathon - Multi Entry</title>
+    <title>Scanner Pelikat Marathon - Advanced</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
-        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 20px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .result-container { max-width: 450px; margin: 20px auto; display: none; }
-        .participant-card { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: left; position: relative; border-left: 8px solid #27ae60; }
-        .collected { border-left: 8px solid #e67e22; background: #fffcf5; }
-        .bib-badge { font-size: 32px; color: #d9534f; font-weight: bold; display: block; margin: 5px 0; }
-        .status-tag { display: inline-block; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; margin-top: 10px; }
-        .btn-confirm { background: #27ae60; color: white; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        .btn-new-scan { background: #3498db; color: white; padding: 15px; border: none; border-radius: 12px; font-size: 18px; width: 100%; font-weight: bold; margin-top: 20px; }
-        .info-row { font-size: 14px; color: #555; }
+        .container { max-width: 450px; margin: auto; }
+        #reader { width: 100%; border-radius: 15px; overflow: hidden; background: white; }
+        .input-box { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .participant-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: left; border-left: 10px solid #27ae60; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .collected { border-left-color: #e67e22; background: #fff5e6; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s; }
+        .btn-confirm { background: #27ae60; color: white; margin-top: 10px; }
+        .btn-search { background: #3498db; color: white; }
+        .bib-text { font-size: 24px; color: #d9534f; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2 style="color: #2c3e50;">REPC SCANNER 🚀</h2>
-    
-    <div id="reader-wrapper">
+<div class="container">
+    <h2 style="color: #2c3e50;">REPC SYSTEM 🚀</h2>
+
+    <div id="search-ui" class="input-box">
         <div id="reader"></div>
-        <p style="color: #666; font-size: 14px;">Halakan kamera ke Kod QR Peserta</p>
+        <p style="margin: 10px 0; font-weight: bold; color: #666;">- ATAU TAIP IC -</p>
+        <input type="text" id="manual-ic" placeholder="Masukkan No. IC Peserta">
+        <button class="btn-search" onclick="lookupParticipant(document.getElementById('manual-ic').value)">CARI PESERTA</button>
     </div>
 
-    <div id="result-container" class="result-container">
+    <div id="result-container" style="display:none;">
         <div id="list-participants"></div>
-        <button class="btn-new-scan" onclick="location.reload()">SCAN PESERTA BARU</button>
-    </div>
-
-    <script>
-        // --- CONFIG FIREBASE ANDA ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDSMdRl8ZOE7GnDyN-SVXSol32ec_EkaTc",
-            authDomain: "repc-712cd.firebaseapp.com",
-            databaseURL: "https://repc-712cd-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "repc-712cd",
-            storageBucket: "repc-712cd.firebasestorage.app",
-            messagingSenderId: "856650376390",
-            appId: "1:856650376390:web:8c9e97d67149c80bc023c7"
-        };
         
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        <div class="input-box" id="collector-ui">
+            <p style="margin:0; font-weight:bold; color: #e67e22;">MAKLUMAT PENUNTUT:</p>
+            <input type="text" id="collector-name" placeholder="Nama Orang Yang Datang Ambil">
+            <p style="font-size:11px; color:#888;">*Jika ambil untuk kawan, masukkan IC kawan di bawah (asingkan dengan koma):</p>
+            <input type="text" id="friend-ics" placeholder="IC Kawan 1, IC Kawan 2">
+            <button class="btn-confirm" id="btn-final" onclick="processBulk()">SAHKAN PENGAMBILAN</button>
+        </div>
+        
+        <button onclick="location.reload()" style="background:#95a5a6; color:white;">BATAL & SCAN BARU</button>
+    </div>
+</div>
 
-        let currentIC = "";
-        const html5QrCode = new Html5Qrcode("reader");
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDSMdRl8ZOE7GnDyN-SVXSol32ec_EkaTc",
+        authDomain: "repc-712cd.firebaseapp.com",
+        databaseURL: "https://repc-712cd-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "repc-712cd",
+        storageBucket: "repc-712cd.firebasestorage.app",
+        messagingSenderId: "856650376390",
+        appId: "1:856650376390:web:8c9e97d67149c80bc023c7"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let targetKeys = [];
 
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
-            try {
-                const url = new URL(decodedText);
-                currentIC = url.searchParams.get("id");
-                if (currentIC) {
-                    html5QrCode.stop(); // Henti kamera bila dah jumpa
-                    document.getElementById("reader-wrapper").style.display = "none";
-                    lookupParticipant(currentIC);
-                }
-            } catch (e) { console.error("QR Error"); }
+    // SCANNER SETUP
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
+        const url = new URL(decodedText);
+        const id = url.searchParams.get("id");
+        if (id) {
+            html5QrCode.stop();
+            lookupParticipant(id);
+        }
+    });
+
+    function lookupParticipant(ic) {
+        const cleanIC = ic.replace(/\D/g, "");
+        if (!cleanIC) return alert("Sila masukkan IC!");
+        
+        db.ref("participants").orderByChild("ic").equalTo(cleanIC).once("value", (snapshot) => {
+            const results = snapshot.val();
+            const listDiv = document.getElementById("list-participants");
+            listDiv.innerHTML = ""; targetKeys = [];
+
+            if (results) {
+                document.getElementById("search-ui").style.display = "none";
+                document.getElementById("result-container").style.display = "block";
+                
+                Object.keys(results).forEach((key) => {
+                    const data = results[key];
+                    if (data.status !== "COLLECTED") targetKeys.push(key);
+                    
+                    const isCol = data.status === "COLLECTED";
+                    listDiv.innerHTML += `
+                        <div class="participant-card ${isCol ? 'collected' : ''}">
+                            <b>${data.name}</b><br>
+                            <span class="bib-text">${data.bib}</span><br>
+                            <small>${data.category} | ${data.size}</small><br>
+                            ${isCol ? `<small style="color:#d35400;"><b>DIAMBIL OLEH:</b> ${data.collected_by || 'Unknown'}<br><b>PADA:</b> ${data.timestamp}</small>` : ''}
+                        </div>`;
+                });
+            } else { alert("IC tidak dijumpai!"); }
+        });
+    }
+
+    async function processBulk() {
+        const collector = document.getElementById("collector-name").value;
+        if (!collector) return alert("Sila masukkan NAMA PENUNTUT!");
+
+        const btn = document.getElementById("btn-final");
+        btn.disabled = true; btn.innerText = "Processing...";
+
+        const friendInput = document.getElementById("friend-ics").value;
+        const now = new Date().toLocaleString("ms-MY", {timeZone: "Asia/Kuala_Lumpur"});
+        
+        // Cari IC kawan
+        if (friendInput.trim() !== "") {
+            const friendList = friendInput.split(",");
+            for (let fIC of friendList) {
+                const fClean = fIC.trim().replace(/\D/g, "");
+                const snap = await db.ref("participants").orderByChild("ic").equalTo(fClean).once("value");
+                const fData = snap.val();
+                if (fData) Object.keys(fData).forEach(k => { if(fData[k].status !== "COLLECTED") targetKeys.push(k); });
+            }
+        }
+
+        if (targetKeys.length === 0) { alert("Tiada bib untuk disahkan!"); location.reload(); return; }
+
+        let updates = {};
+        targetKeys.forEach(key => {
+            updates["participants/" + key + "/status"] = "COLLECTED";
+            updates["participants/" + key + "/timestamp"] = now;
+            updates["participants/" + key + "/collected_by"] = collector; // Simpan nama penuntut
         });
 
-        function lookupParticipant(ic) {
-            // Carian berdasarkan 'ic' (kerana dalam FirebaseSync kita simpan ic di dalam field)
-            db.ref("participants").orderByChild("ic").equalTo(ic).once("value", (snapshot) => {
-                const results = snapshot.val();
-                const listDiv = document.getElementById("list-participants");
-                listDiv.innerHTML = `<h3 style="text-align:left;">IC: ${ic}</h3>`;
-                
-                if (results) {
-                    Object.keys(results).forEach((key) => {
-                        const data = results[key];
-                        const isCollected = data.status === "COLLECTED";
-                        
-                        const card = document.createElement("div");
-                        card.className = `participant-card ${isCollected ? 'collected' : ''}`;
-                        card.innerHTML = `
-                            <b style="font-size:18px;">${data.name}</b>
-                            <span class="bib-badge">${data.bib}</span>
-                            <div class="info-row">KAT: <b>${data.category}</b> | SAIZ: <b>${data.size}</b></div>
-                            ${isCollected ? 
-                                `<div class="status-tag" style="background:#fff3cd; color:#856404;">⚠️ DIAMBIL PADA: ${data.timestamp}</div>` : 
-                                `<button class="btn-confirm" id="btn-${key}" onclick="confirmOne('${key}')">SAHKAN PENGAMBILAN</button>`
-                            }
-                        `;
-                        listDiv.appendChild(card);
-                    });
-                    document.getElementById("result-container").style.display = "block";
-                } else {
-                    alert("Peserta tidak dijumpai!");
-                    location.reload();
-                }
-            });
-        }
-
-        function confirmOne(uniqueKey) {
-            const btn = document.getElementById("btn-" + uniqueKey);
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            const now = new Date().toLocaleString("ms-MY", {timeZone: "Asia/Kuala_Lumpur"});
-            
-            db.ref("participants/" + uniqueKey).update({
-                status: "COLLECTED",
-                timestamp: now
-            }).then(() => {
-                alert("✅ Berjaya Disahkan!");
-                // Refresh senarai tanpa buka kamera balik
-                lookupParticipant(currentIC);
-            }).catch(err => {
-                alert("Error: " + err.message);
-                btn.disabled = false;
-            });
-        }
-    </script>
+        db.ref().update(updates).then(() => {
+            alert("✅ Berjaya! " + targetKeys.length + " pendaftaran telah disahkan.");
+            location.reload();
+        });
+    }
+</script>
 </body>
 </html>
