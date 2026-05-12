@@ -7,43 +7,53 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f9; margin: 0; padding: 20px; }
-        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 15px; overflow: hidden; border: 2px solid #ddd; }
-        .result-card { background: white; padding: 20px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; text-align: center; }
-        button { background: #27ae60; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; width: 90%; font-weight: bold; }
-        .loading { color: #666; font-style: italic; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 20px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .result-card { background: white; padding: 25px; border-radius: 20px; margin-top: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: none; max-width: 400px; margin-left: auto; margin-right: auto; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; text-align: center; box-sizing: border-box; }
+        input:focus { border-color: #27ae60; outline: none; }
+        button { background: #27ae60; color: white; padding: 18px; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s; }
+        button:active { transform: scale(0.98); background: #219150; }
+        .status-msg { color: #666; font-size: 14px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <h2 style="color: #2c3e50;">REPC SCANNER 🚀</h2>
+    <h2 style="color: #2c3e50; margin-bottom: 20px;">REPC SCANNER 🚀</h2>
+    
     <div id="reader"></div>
-    <p id="status-msg" class="loading">Sila benarkan akses kamera...</p>
+    <p id="status-msg" class="status-msg">Sila halakan kamera ke Kod QR peserta</p>
 
     <div id="result" class="result-card">
-        <h2 id="p-name" style="margin-top:0; color:#2c3e50;">Nama Peserta</h2>
-        <p style="margin:5px 0;">BIB: <b id="p-bib" style="font-size: 32px; color: #d9534f;">-</b></p>
-        <p style="margin:5px 0;">SAIZ: <b id="p-size">-</b> | KATEGORI: <b id="p-cat">-</b></p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-        <p style="font-size: 12px; color: #666;">TAMBAH IC KAWAN (JIKA ADA):</p>
-        <input type="text" id="extra-ic" placeholder="Masukkan No. IC Tambahan">
-        <br><br>
+        <h2 id="p-name" style="margin: 0 0 10px 0; color:#2c3e50;">Nama Peserta</h2>
+        <p style="margin:5px 0; color: #666;">NO. BIB:</p>
+        <b id="p-bib" style="font-size: 40px; color: #d9534f; display: block; margin-bottom: 10px;">-</b>
+        
+        <div style="display: flex; justify-content: space-around; background: #f9f9f9; padding: 10px; border-radius: 10px;">
+            <div><small>SAIZ</small><br><b id="p-size">-</b></div>
+            <div style="border-left: 1px solid #ddd;"></div>
+            <div><small>KATEGORI</small><br><b id="p-cat">-</b></div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <p style="font-size: 12px; color: #888; font-weight: bold;">AMBIL UNTUK KAWAN? (MASUKKAN IC):</p>
+        <input type="text" id="extra-ic" placeholder="No. IC Tambahan (Jika Ada)">
+        
         <button id="btn-confirm" onclick="confirmCollection()">SAHKAN PENGAMBILAN</button>
-        <br><br>
-        <a href="#" onclick="location.reload()" style="font-size: 14px; color: #999;">Batal / Scan Semula</a>
+        <p style="margin-top: 15px;"><a href="#" onclick="location.reload()" style="color: #999; font-size: 13px; text-decoration: none;">Batal & Scan Semula</a></p>
     </div>
 
     <script>
-        // --- GANTIKAN DENGAN CONFIG FIREBASE ANDA ---
+        // --- CONFIG FIREBASE ANDA (SUDAH DIKEMASKINI) ---
         const firebaseConfig = {
-            apiKey: "SALIN_API_KEY_DARI_FIREBASE",
+            apiKey: "AIzaSyDSMdRl8ZOE7GnDyN-SVXSol32ec_EkaTc",
             authDomain: "repc-712cd.firebaseapp.com",
-            databaseURL: "https://repc-712cd-default-rtdb.firebaseio.com",
+            databaseURL: "https://repc-712cd-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "repc-712cd",
-            storageBucket: "repc-712cd.appspot.com",
-            messagingSenderId: "SENDER_ID_ANDA",
-            appId: "APP_ID_ANDA"
+            storageBucket: "repc-712cd.firebasestorage.app",
+            messagingSenderId: "856650376390",
+            appId: "1:856650376390:web:8c9e97d67149c80bc023c7"
         };
         
         firebase.initializeApp(firebaseConfig);
@@ -53,35 +63,46 @@
 
         // SETUP SCANNER
         const html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const config = { fps: 15, qrbox: { width: 250, height: 250 } };
 
         html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
             try {
+                // Mendapatkan ID dari URL: contoh ...exec?id=990101145566
                 const url = new URL(decodedText);
                 currentIC = url.searchParams.get("id");
                 
                 if (currentIC) {
-                    document.getElementById("status-msg").innerText = "Mencari data: " + currentIC;
                     lookupParticipant(currentIC);
-                    html5QrCode.pause(true); // Pause scanner bila dah jumpa
+                    html5QrCode.pause(true); // Henti sekejap kamera
                 }
             } catch (e) {
-                console.error("QR tidak sah");
+                console.error("QR bukan format URL yang sah");
             }
         });
 
         function lookupParticipant(ic) {
+            document.getElementById("status-msg").innerText = "Menyemak database...";
+            
             db.ref("participants/" + ic).once("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     document.getElementById("p-name").innerText = data.name;
                     document.getElementById("p-bib").innerText = data.bib;
-                    document.getElementById("p-size").innerText = data.size;
+                    document.getElementById("p-size").innerText = data.size.toUpperCase();
                     document.getElementById("p-cat").innerText = data.category;
+                    
+                    // Jika sudah diambil sebelum ini
+                    if (data.status === "COLLECTED") {
+                        alert("AMARAN: Peserta ini sudah mengambil kit pada " + data.timestamp);
+                        document.getElementById("btn-confirm").style.backgroundColor = "#e67e22";
+                        document.getElementById("btn-confirm").innerText = "DAH AMBIL (UPDATE SEMULA?)";
+                    }
+
                     document.getElementById("result").style.display = "block";
+                    document.getElementById("reader").style.display = "none";
                     document.getElementById("status-msg").style.display = "none";
                 } else {
-                    alert("Peserta (IC: " + ic + ") tidak dijumpai dalam sistem!");
+                    alert("RALAT: IC " + ic + " tidak dijumpai dalam sistem!");
                     location.reload();
                 }
             });
@@ -92,7 +113,7 @@
             const extraIC = document.getElementById("extra-ic").value.replace(/\D/g, "");
             
             let targets = [currentIC];
-            if(extraIC) targets.push(extraIC);
+            if(extraIC && extraIC.length > 5) targets.push(extraIC);
 
             const updates = {};
             targets.forEach(ic => {
@@ -102,7 +123,7 @@
 
             db.ref().update(updates)
                 .then(() => {
-                    alert("✅ PENGAMBILAN BERJAYA DISAHKAN!");
+                    alert("✅ BERJAYA! Data telah dikemaskini.");
                     location.reload();
                 })
                 .catch((error) => {
