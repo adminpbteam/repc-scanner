@@ -2,47 +2,73 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REPC Scanner - Auto Proxy</title>
+    <title>REPC Advanced Transaction</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; text-align: center; }
         .container { max-width: 500px; margin: auto; }
-        #reader { width: 100%; border-radius: 15px; background: white; }
-        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; text-align: left; border-left: 8px solid #3498db; }
-        .leader-card { border-left-color: #27ae60; background: #ebf9f1; }
-        .proxy-card { border-left-color: #9b59b6; background: #f5eef8; }
-        .collected { border-left-color: #95a5a6; background: #eee; color: #7f8c8d; }
-        .bib { font-size: 28px; color: #e74c3c; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { padding: 15px; border: none; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
-        .btn-confirm { background: #27ae60; color: white; font-size: 18px; }
+        
+        /* Scanner & Input UI */
+        #reader-wrapper { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; }
+        .input-box { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        
+        /* Participant Cards */
+        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; text-align: left; border-left: 10px solid #27ae60; position: relative; }
+        .collected-card { border-left-color: #e67e22; background: #fff5e6; }
+        .bib { font-size: 32px; color: #e74c3c; font-weight: bold; }
+        .collected-badge { background: orange; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; position: absolute; top: 10px; right: 10px; }
+        
+        /* Buttons & Inputs */
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s; }
+        .btn-confirm { background: #27ae60; color: white; margin-top: 15px; }
+        .btn-add { background: #3498db; color: white; }
+        .btn-scan-opt { background: #9b59b6; color: white; margin-bottom: 5px; font-size: 14px; padding: 10px; }
+        .delete-btn { background: #e74c3c; color: white; padding: 8px; font-size: 12px; position: absolute; top: 10px; right: 10px; border-radius: 5px; width: auto;}
+
+        hr { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center;">REPC TRANSACTION 🚀</h2>
+    <h2 style="color: #2c3e50;">REPC TRANSACTION 🚀</h2>
 
-    <div id="scan-ui">
-        <div id="reader"></div>
-        <p style="text-align:center;">Scan QR Pertama (Tuan Badan/Ketua)</p>
+    <div id="search-leader-ui">
+        <div id="reader-wrapper">
+            <div id="reader"></div>
+            <p style="margin: 10px 0;">IMBAS QR UTAMA (Tuan Badan)</p>
+        </div>
+        <div class="input-box">
+            <p style="margin: 0 0 10px 0; font-weight: bold; color: #666;">- ATAU TAIP IC KETUA -</p>
+            <input type="text" id="manual-ic-leader" placeholder="IC Tuan Badan (Contoh: 900101015566)">
+            <button class="btn-add" onclick="lookupLeader(document.getElementById('manual-ic-leader').value)">CARI KETUA</button>
+        </div>
     </div>
 
-    <div id="result-ui" style="display:none;">
-        <div id="leader-section"></div>
+    <div id="transaction-ui" style="display:none;">
+        <h3 id="display-leader-ic" style="text-align: left;">TUAN BADAN (KETUA):</h3>
+        <div id="leader-card-container"></div>
+        
         <hr>
-        <div id="proxy-section">
-            <p style="font-weight:bold; color:#9b59b6;">TAMBAH IC WAKIL (MAX 5):</p>
-            <input type="text" class="proxy-input" placeholder="IC Wakil 1">
-            <input type="text" class="proxy-input" placeholder="IC Wakil 2">
-            <input type="text" class="proxy-input" placeholder="IC Wakil 3">
-            <input type="text" class="proxy-input" placeholder="IC Wakil 4">
-            <input type="text" class="proxy-input" placeholder="IC Wakil 5">
+
+        <div class="input-box" id="add-proxy-ui">
+            <p style="margin:0 0 15px 0; font-weight:bold; color: #3498db;">TAMBAH IC WAKIL (MAX 5):</p>
+            <button class="btn-scan-opt" id="btn-show-scanner" onclick="showProxyScanner()">[A] Imbas QR Wakil</button>
+            <input type="text" id="manual-ic-proxy" placeholder="IC Wakil (Contoh: 880202024433)">
+            <button class="btn-add" id="btn-add-manual" onclick="addProxyByIC(document.getElementById('manual-ic-proxy').value)">[B] Cari Wakil (IC)</button>
         </div>
-        <button class="btn-confirm" onclick="processTransaction()">SAHKAN TRANSAKSI</button>
-        <button onclick="location.reload()" style="background:#95a5a6; color:white;">BATAL</button>
+
+        <h3 style="text-align: left;">SENARAI WAKIL UNTUK DIKEMASKINI:</h3>
+        <div id="proxy-cards-container">
+            <p id="no-proxy-msg" style="color: #888;">Belum ada wakil ditambah.</p>
+        </div>
+        
+        <button class="btn-confirm" id="btn-final-process" onclick="processAll()" disabled>SAHKAN & KEMASKINI SEMUA</button>
+        <button onclick="location.reload()" style="background:#95a5a6; color:white; margin-top: 10px;">BATAL TRANSAKSI</button>
     </div>
 </div>
 
@@ -56,79 +82,171 @@
         messagingSenderId: "856650376390",
         appId: "1:856650376390:web:8c9e97d67149c80bc023c7"
     };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // Simpan kunci (uniqueKeys) pendaftaran yang perlu dikemaskini
     let leaderName = "";
-    let leaderKeys = [];
-    const scanner = new Html5Qrcode("reader");
+    let leaderUniqueKeys = [];
+    let proxyUniqueKeys = []; 
+    const MAX_PROXY = 5;
 
-    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        const url = new URL(text);
-        const id = url.searchParams.get("id");
-        if (id) { scanner.stop(); startTransaction(id); }
+    // --- SETUP SCANNER UTAMA (KETUA) ---
+    const leaderScanner = new Html5Qrcode("reader");
+    leaderScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+        try {
+            const url = new URL(text);
+            const id = url.searchParams.get("id");
+            if (id) {
+                leaderScanner.stop();
+                lookupLeader(id);
+            }
+        } catch (e) { alert("QR Tidak Sah"); }
     });
 
-    function startTransaction(ic) {
-        db.ref("participants").orderByChild("ic").equalTo(ic).once("value", (snap) => {
-            const data = snap.val();
-            if (!data) return alert("Ketua tidak dijumpai!");
+    // --- FUNGSI CARI KETUA (Dual Input) ---
+    function lookupLeader(ic) {
+        const cleanIC = ic.replace(/\D/g, "");
+        if (!cleanIC) return alert("Sila masukkan IC!");
+        
+        db.ref("participants").orderByChild("ic").equalTo(cleanIC).once("value", (snapshot) => {
+            const results = snapshot.val();
+            const container = document.getElementById("leader-card-container");
+            container.innerHTML = ""; 
+            leaderUniqueKeys = []; 
 
-            document.getElementById("scan-ui").style.display = "none";
-            document.getElementById("result-ui").style.display = "block";
-            
-            const leaderDiv = document.getElementById("leader-section");
-            leaderDiv.innerHTML = "<b>TUAN BADAN (KETUA):</b>";
-            
-            Object.keys(data).forEach(key => {
-                const p = data[key];
-                leaderName = p.name; // Simpan nama ketua untuk digunakan sebagai nama wakil nanti
-                if (p.status !== "COLLECTED") leaderKeys.push(key);
-
-                leaderDiv.innerHTML += `
-                    <div class="card leader-card ${p.status === 'COLLECTED' ? 'collected' : ''}">
-                        <b>${p.name}</b><br>
-                        <span class="bib">${p.bib}</span><br>
-                        <small>STATUS: ${p.status} ${p.collected_by ? '(Oleh: '+p.collected_by+')' : ''}</small>
-                    </div>`;
-            });
+            if (results) {
+                document.getElementById("search-leader-ui").style.display = "none";
+                document.getElementById("transaction-ui").style.display = "block";
+                document.getElementById("display-leader-ic").innerText += " " + cleanIC;
+                
+                Object.keys(results).forEach((key) => {
+                    const data = results[key];
+                    leaderName = data.name; // Simpan nama ketua
+                    if (data.status !== "COLLECTED") leaderUniqueKeys.push(key);
+                    
+                    const isCol = data.status === "COLLECTED";
+                    const card = createParticipantCard(data, isCol);
+                    container.appendChild(card);
+                });
+                toggleConfirmButton();
+            } else { alert("IC Ketua tidak dijumpai!"); }
         });
     }
 
-    async function processTransaction() {
-        const now = new Date().toLocaleString("ms-MY", {timeZone: "Asia/Kuala_Lumpur"});
-        let updates = {};
-        
-        // 1. Proses Ketua (Tuan Badan)
-        leaderKeys.forEach(key => {
-            updates["participants/" + key + "/status"] = "COLLECTED";
-            updates["participants/" + key + "/timestamp"] = now;
-            updates["participants/" + key + "/collected_by"] = "TUAN BADAN";
-        });
-
-        // 2. Proses IC Wakil
-        const proxyInputs = document.getElementsByClassName("proxy-input");
-        for (let input of proxyInputs) {
-            const fIC = input.value.trim().replace(/\D/g, "");
-            if (fIC) {
-                const snap = await db.ref("participants").orderByChild("ic").equalTo(fIC).once("value");
-                const fData = snap.val();
-                if (fData) {
-                    Object.keys(fData).forEach(k => {
-                        if (fData[k].status !== "COLLECTED") {
-                            updates["participants/" + k + "/status"] = "COLLECTED";
-                            updates["participants/" + k + "/timestamp"] = now;
-                            updates["participants/" + k + "/collected_by"] = "WAKIL (" + leaderName + ")";
-                        }
-                    });
-                }
-            }
+    // --- SETUP SCANNER WAKIL (Popup Prompt) ---
+    async function showProxyScanner() {
+        if (proxyUniqueKeys.length >= MAX_PROXY * 3) { // Anggaran 3 bib se-IC
+            return alert("Sudah mencapai had maksimum wakil (IC/Nama).");
         }
 
-        if (Object.keys(updates).length === 0) return alert("Tiada data untuk dikemaskini!");
+        // Tunjukkan prompt untuk masukkan IC dari QR (Kerana Prompt Scanner HTML5 rumit untuk Bulk)
+        const promptIC = prompt("Sila IMBAS QR WAKIL di bawah dengan kamera fon, kemudian tampal nombor IC (id=) di sini, ATAU imbas QR pada fon lain untuk salin IC:");
+        if (promptIC) addProxyByIC(promptIC);
+    }
+
+    // --- FUNGSI TAMBAH WAKIL (Dengan Paparan Kad Butiran) ---
+    async function addProxyByIC(ic) {
+        if (proxyUniqueKeys.length >= MAX_PROXY * 3) return alert("Had IC/Bib wakil penuh.");
+
+        const cleanIC = ic.replace(/\D/g, "");
+        if (!cleanIC) return alert("IC Tidak Sah.");
+
+        // Semak jika IC ini sudah ditambah dalam proxy list
+        if (proxyUniqueKeys.some(key => key.startsWith(cleanIC))) return alert("IC ini sudah ditambah.");
+
+        const btnManual = document.getElementById("btn-add-manual");
+        btnManual.disabled = true; btnManual.innerText = "Mencari...";
+
+        db.ref("participants").orderByChild("ic").equalTo(cleanIC).once("value", (snapshot) => {
+            const results = snapshot.val();
+            const container = document.getElementById("proxy-cards-container");
+            document.getElementById("no-proxy-msg").style.display = "none";
+
+            if (results) {
+                // Tunjuk kad butiran bagi setiap bib di bawah IC tersebut
+                Object.keys(results).forEach((key) => {
+                    const data = results[key];
+                    if (data.status === "COLLECTED") {
+                        const card = createParticipantCard(data, true); // Merah/Oren
+                        container.appendChild(card);
+                    } else {
+                        proxyUniqueKeys.push(key);
+                        const card = createParticipantCard(data, false); // Hijau
+                        
+                        // Tambah butang "Hapus" pada kad hijau wakil
+                        const deleteBtn = document.createElement("button");
+                        deleteBtn.className = "delete-btn"; deleteBtn.innerText = "Hapus";
+                        deleteBtn.onclick = function() { removeProxyCard(this, key); };
+                        card.appendChild(deleteBtn);
+                        container.appendChild(card);
+                    }
+                });
+                alert("IC Wakil " + cleanIC + " ditambah.");
+            } else { alert("IC Wakil tidak dijumpai!"); }
+
+            document.getElementById("manual-ic-proxy").value = "";
+            btnManual.disabled = false; btnManual.innerText = "[B] Cari Wakil (IC)";
+            toggleConfirmButton();
+        });
+    }
+
+    // --- FUNGSI HAPUS KAD WAKIL ---
+    function removeProxyCard(btn, key) {
+        const card = btn.parentElement;
+        card.remove(); // Padam kad dari paparan
+        proxyUniqueKeys = proxyUniqueKeys.filter(k => k !== key); // Padam kunci dari list updates
+        if (proxyUniqueKeys.length === 0) document.getElementById("no-proxy-msg").style.display = "block";
+        toggleConfirmButton();
+    }
+
+    // --- BANTUAN: CIPTA KAD PESERTA ---
+    function createParticipantCard(data, isCollected) {
+        const card = document.createElement("div");
+        card.className = `card ${isCollected ? 'collected-card' : ''}`;
+        card.innerHTML = `
+            <b>${data.name}</b><br>
+            <span class="bib">${data.bib}</span><br>
+            <small style="color:#e67e22;"><b>${data.category} | ${data.size} Unisex</b></small><br>
+            ${isCollected ? `<span class="collected-badge">Sudah Diambil oleh ${data.collected_by || '?'}</span>` : ''}
+        `;
+        return card;
+    }
+
+    // --- BANTUAN: HIDUPKAN BUTANG CONFIRM ---
+    function toggleConfirmButton() {
+        const btn = document.getElementById("btn-final-process");
+        btn.disabled = (leaderUniqueKeys.length === 0 && proxyUniqueKeys.length === 0);
+    }
+
+    // --- FUNGSI SAHKAN SEMUA ---
+    function processAll() {
+        if (!confirm("Sahkan pengambilan untuk Ketua dan SEMUA wakil dalam senarai?")) return;
+
+        const btn = document.getElementById("btn-final-process");
+        btn.disabled = true; btn.innerText = "Mengemaskini...";
+
+        const now = new Date().toLocaleString("ms-MY", {timeZone: "Asia/Kuala_Lumpur"});
+        const updates = {};
+        const wakilLabel = "WAKIL (" + leaderName + ")";
+
+        // 1. Rekod untuk Ketua (Tuan Badan)
+        leaderUniqueKeys.forEach(k => {
+            updates["participants/" + k + "/status"] = "COLLECTED";
+            updates["participants/" + k + "/timestamp"] = now;
+            updates["participants/" + k + "/collected_by"] = "TUAN BADAN";
+        });
+
+        // 2. Rekod untuk Wakil
+        proxyUniqueKeys.forEach(k => {
+            updates["participants/" + k + "/status"] = "COLLECTED";
+            updates["participants/" + k + "/timestamp"] = now;
+            updates["participants/" + k + "/collected_by"] = wakilLabel;
+        });
 
         db.ref().update(updates).then(() => {
-            alert("✅ TRANSAKSI BERJAYA!\nSemua bib telah diserahkan.");
+            alert("✅ BERJAYA!\nSemua rekod transaksi telah dikemaskini.");
             location.reload();
         });
     }
