@@ -2,34 +2,25 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>REPC Advanced Transaction</title>
+    <title>REPC Multi-Scanner Pro</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; text-align: center; }
         .container { max-width: 500px; margin: auto; }
-        
-        /* Scanner & Input UI */
-        #reader-wrapper { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        #reader-wrapper { background: white; padding: 10px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
         #reader { width: 100%; border-radius: 10px; overflow: hidden; }
-        .input-box { background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
-        /* Participant Cards */
         .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px; text-align: left; border-left: 10px solid #27ae60; position: relative; }
         .collected-card { border-left-color: #e67e22; background: #fff5e6; }
         .bib { font-size: 32px; color: #e74c3c; font-weight: bold; }
-        .collected-badge { background: orange; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; position: absolute; top: 10px; right: 10px; }
-        
-        /* Buttons & Inputs */
+        .label-status { font-size: 12px; font-weight: bold; color: #666; margin-bottom: 5px; display: block; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s; }
+        button { padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
         .btn-confirm { background: #27ae60; color: white; margin-top: 15px; }
-        .btn-add { background: #3498db; color: white; }
-        .btn-scan-opt { background: #9b59b6; color: white; margin-bottom: 5px; font-size: 14px; padding: 10px; }
-        .delete-btn { background: #e74c3c; color: white; padding: 8px; font-size: 12px; position: absolute; top: 10px; right: 10px; border-radius: 5px; width: auto;}
-
-        hr { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+        .btn-add { background: #3498db; color: white; margin-bottom: 10px; }
+        .delete-btn { background: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; float: right; border-radius: 5px; width: auto; margin-top: -5px;}
+        hr { border: 0; border-top: 1px solid #ddd; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -37,38 +28,22 @@
 <div class="container">
     <h2 style="color: #2c3e50;">REPC TRANSACTION 🚀</h2>
 
-    <div id="search-leader-ui">
-        <div id="reader-wrapper">
-            <div id="reader"></div>
-            <p style="margin: 10px 0;">IMBAS QR UTAMA (Tuan Badan)</p>
-        </div>
-        <div class="input-box">
-            <p style="margin: 0 0 10px 0; font-weight: bold; color: #666;">- ATAU TAIP IC KETUA -</p>
-            <input type="text" id="manual-ic-leader" placeholder="IC Tuan Badan (Contoh: 900101015566)">
-            <button class="btn-add" onclick="lookupLeader(document.getElementById('manual-ic-leader').value)">CARI KETUA</button>
-        </div>
+    <div id="reader-wrapper">
+        <div id="reader"></div>
+        <p id="scan-instruction" style="font-weight: bold; color: #3498db; margin: 10px 0;">IMBAS QR TUAN BADAN / WAKIL</p>
     </div>
 
-    <div id="transaction-ui" style="display:none;">
-        <h3 id="display-leader-ic" style="text-align: left;">TUAN BADAN (KETUA):</h3>
-        <div id="leader-card-container"></div>
-        
-        <hr>
+    <div style="background:white; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
+        <input type="text" id="manual-ic" placeholder="ATAU TAIP IC DI SINI">
+        <button class="btn-add" onclick="processInput(document.getElementById('manual-ic').value)">TAMBAH IC</button>
+    </div>
 
-        <div class="input-box" id="add-proxy-ui">
-            <p style="margin:0 0 15px 0; font-weight:bold; color: #3498db;">TAMBAH IC WAKIL (MAX 5):</p>
-            <button class="btn-scan-opt" id="btn-show-scanner" onclick="showProxyScanner()">[A] Imbas QR Wakil</button>
-            <input type="text" id="manual-ic-proxy" placeholder="IC Wakil (Contoh: 880202024433)">
-            <button class="btn-add" id="btn-add-manual" onclick="addProxyByIC(document.getElementById('manual-ic-proxy').value)">[B] Cari Wakil (IC)</button>
-        </div>
-
-        <h3 style="text-align: left;">SENARAI WAKIL UNTUK DIKEMASKINI:</h3>
-        <div id="proxy-cards-container">
-            <p id="no-proxy-msg" style="color: #888;">Belum ada wakil ditambah.</p>
-        </div>
+    <div id="transaction-ui" style="display:none; text-align: left;">
+        <h3 id="transaction-title">SENARAI TRANSAKSI:</h3>
+        <div id="cards-container"></div>
         
-        <button class="btn-confirm" id="btn-final-process" onclick="processAll()" disabled>SAHKAN & KEMASKINI SEMUA</button>
-        <button onclick="location.reload()" style="background:#95a5a6; color:white; margin-top: 10px;">BATAL TRANSAKSI</button>
+        <button class="btn-confirm" id="btn-final" onclick="submitAll()">SAHKAN SEMUA PENGAMBILAN</button>
+        <button onclick="location.reload()" style="background:#95a5a6; color:white; margin-top: 10px;">BATAL / SCAN BARU</button>
     </div>
 </div>
 
@@ -86,167 +61,88 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Simpan kunci (uniqueKeys) pendaftaran yang perlu dikemaskini
     let leaderName = "";
-    let leaderUniqueKeys = [];
-    let proxyUniqueKeys = []; 
-    const MAX_PROXY = 5;
+    let pendaftaranToUpdate = []; // Menyimpan uniqueKeys untuk disahkan
+    let scannedICs = []; // Untuk elak scan orang yang sama dua kali
 
-    // --- SETUP SCANNER UTAMA (KETUA) ---
-    const leaderScanner = new Html5Qrcode("reader");
-    leaderScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+    // --- SETUP SCANNER (SENTIASA AKTIF) ---
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
         try {
             const url = new URL(text);
             const id = url.searchParams.get("id");
-            if (id) {
-                leaderScanner.stop();
-                lookupLeader(id);
-            }
-        } catch (e) { alert("QR Tidak Sah"); }
+            if (id) processInput(id);
+        } catch (e) { console.log("Bukan QR Google Script"); }
     });
 
-    // --- FUNGSI CARI KETUA (Dual Input) ---
-    function lookupLeader(ic) {
+    // --- FUNGSI PROSES INPUT (QR ATAU TAIP) ---
+    function processInput(ic) {
         const cleanIC = ic.replace(/\D/g, "");
-        if (!cleanIC) return alert("Sila masukkan IC!");
+        if (!cleanIC || scannedICs.includes(cleanIC)) return;
+        
+        // Bunyi 'beep' atau haptic feedback jika perlu boleh tambah sini
+        scannedICs.push(cleanIC);
+        document.getElementById("manual-ic").value = "";
         
         db.ref("participants").orderByChild("ic").equalTo(cleanIC).once("value", (snapshot) => {
             const results = snapshot.val();
-            const container = document.getElementById("leader-card-container");
-            container.innerHTML = ""; 
-            leaderUniqueKeys = []; 
+            if (!results) {
+                alert("IC " + cleanIC + " tidak dijumpai!");
+                scannedICs = scannedICs.filter(i => i !== cleanIC);
+                return;
+            }
 
-            if (results) {
-                document.getElementById("search-leader-ui").style.display = "none";
-                document.getElementById("transaction-ui").style.display = "block";
-                document.getElementById("display-leader-ic").innerText += " " + cleanIC;
-                
-                Object.keys(results).forEach((key) => {
-                    const data = results[key];
-                    leaderName = data.name; // Simpan nama ketua
-                    if (data.status !== "COLLECTED") leaderUniqueKeys.push(key);
-                    
-                    const isCol = data.status === "COLLECTED";
-                    const card = createParticipantCard(data, isCol);
-                    container.appendChild(card);
-                });
-                toggleConfirmButton();
-            } else { alert("IC Ketua tidak dijumpai!"); }
+            document.getElementById("transaction-ui").style.display = "block";
+            const container = document.getElementById("cards-container");
+            
+            // Orang pertama yang discan/taip akan jadi KETUA
+            const isLeader = (leaderName === "");
+
+            Object.keys(results).forEach((key) => {
+                const data = results[key];
+                if (isLeader) leaderName = data.name;
+
+                const isAlreadyCollected = data.status === "COLLECTED";
+                if (!isAlreadyCollected) {
+                    pendaftaranToUpdate.push({ key: key, role: isLeader ? "TUAN BADAN" : "WAKIL (" + leaderName + ")" });
+                }
+
+                // Cipta Kad Paparan
+                const card = document.createElement("div");
+                card.className = `card ${isAlreadyCollected ? 'collected-card' : ''}`;
+                card.innerHTML = `
+                    <span class="label-status">${isLeader ? "TUAN BADAN (KETUA)" : "WAKIL KE-" + (scannedICs.length - 1)}</span>
+                    <b>${data.name}</b><br>
+                    <span class="bib">${data.bib}</span><br>
+                    <small>${data.category} | ${data.size}</small>
+                    ${isAlreadyCollected ? `<br><small style="color:orange;">SUDAH DIAMBIL: ${data.collected_by || '?'}</small>` : ''}
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById("scan-instruction").innerText = "IMBAS QR SETERUSNYA (WAKIL)";
+            document.getElementById("scan-instruction").style.color = "#9b59b6";
         });
     }
 
-    // --- SETUP SCANNER WAKIL (Popup Prompt) ---
-    async function showProxyScanner() {
-        if (proxyUniqueKeys.length >= MAX_PROXY * 3) { // Anggaran 3 bib se-IC
-            return alert("Sudah mencapai had maksimum wakil (IC/Nama).");
-        }
+    // --- FUNGSI HANTAR SEMUA ---
+    function submitAll() {
+        if (pendaftaranToUpdate.length === 0) return alert("Tiada pendaftaran baru untuk disahkan.");
 
-        // Tunjukkan prompt untuk masukkan IC dari QR (Kerana Prompt Scanner HTML5 rumit untuk Bulk)
-        const promptIC = prompt("Sila IMBAS QR WAKIL di bawah dengan kamera fon, kemudian tampal nombor IC (id=) di sini, ATAU imbas QR pada fon lain untuk salin IC:");
-        if (promptIC) addProxyByIC(promptIC);
-    }
-
-    // --- FUNGSI TAMBAH WAKIL (Dengan Paparan Kad Butiran) ---
-    async function addProxyByIC(ic) {
-        if (proxyUniqueKeys.length >= MAX_PROXY * 3) return alert("Had IC/Bib wakil penuh.");
-
-        const cleanIC = ic.replace(/\D/g, "");
-        if (!cleanIC) return alert("IC Tidak Sah.");
-
-        // Semak jika IC ini sudah ditambah dalam proxy list
-        if (proxyUniqueKeys.some(key => key.startsWith(cleanIC))) return alert("IC ini sudah ditambah.");
-
-        const btnManual = document.getElementById("btn-add-manual");
-        btnManual.disabled = true; btnManual.innerText = "Mencari...";
-
-        db.ref("participants").orderByChild("ic").equalTo(cleanIC).once("value", (snapshot) => {
-            const results = snapshot.val();
-            const container = document.getElementById("proxy-cards-container");
-            document.getElementById("no-proxy-msg").style.display = "none";
-
-            if (results) {
-                // Tunjuk kad butiran bagi setiap bib di bawah IC tersebut
-                Object.keys(results).forEach((key) => {
-                    const data = results[key];
-                    if (data.status === "COLLECTED") {
-                        const card = createParticipantCard(data, true); // Merah/Oren
-                        container.appendChild(card);
-                    } else {
-                        proxyUniqueKeys.push(key);
-                        const card = createParticipantCard(data, false); // Hijau
-                        
-                        // Tambah butang "Hapus" pada kad hijau wakil
-                        const deleteBtn = document.createElement("button");
-                        deleteBtn.className = "delete-btn"; deleteBtn.innerText = "Hapus";
-                        deleteBtn.onclick = function() { removeProxyCard(this, key); };
-                        card.appendChild(deleteBtn);
-                        container.appendChild(card);
-                    }
-                });
-                alert("IC Wakil " + cleanIC + " ditambah.");
-            } else { alert("IC Wakil tidak dijumpai!"); }
-
-            document.getElementById("manual-ic-proxy").value = "";
-            btnManual.disabled = false; btnManual.innerText = "[B] Cari Wakil (IC)";
-            toggleConfirmButton();
-        });
-    }
-
-    // --- FUNGSI HAPUS KAD WAKIL ---
-    function removeProxyCard(btn, key) {
-        const card = btn.parentElement;
-        card.remove(); // Padam kad dari paparan
-        proxyUniqueKeys = proxyUniqueKeys.filter(k => k !== key); // Padam kunci dari list updates
-        if (proxyUniqueKeys.length === 0) document.getElementById("no-proxy-msg").style.display = "block";
-        toggleConfirmButton();
-    }
-
-    // --- BANTUAN: CIPTA KAD PESERTA ---
-    function createParticipantCard(data, isCollected) {
-        const card = document.createElement("div");
-        card.className = `card ${isCollected ? 'collected-card' : ''}`;
-        card.innerHTML = `
-            <b>${data.name}</b><br>
-            <span class="bib">${data.bib}</span><br>
-            <small style="color:#e67e22;"><b>${data.category} | ${data.size} Unisex</b></small><br>
-            ${isCollected ? `<span class="collected-badge">Sudah Diambil oleh ${data.collected_by || '?'}</span>` : ''}
-        `;
-        return card;
-    }
-
-    // --- BANTUAN: HIDUPKAN BUTANG CONFIRM ---
-    function toggleConfirmButton() {
-        const btn = document.getElementById("btn-final-process");
-        btn.disabled = (leaderUniqueKeys.length === 0 && proxyUniqueKeys.length === 0);
-    }
-
-    // --- FUNGSI SAHKAN SEMUA ---
-    function processAll() {
-        if (!confirm("Sahkan pengambilan untuk Ketua dan SEMUA wakil dalam senarai?")) return;
-
-        const btn = document.getElementById("btn-final-process");
-        btn.disabled = true; btn.innerText = "Mengemaskini...";
+        const btn = document.getElementById("btn-final");
+        btn.disabled = true; btn.innerText = "Mengemaskini Firebase...";
 
         const now = new Date().toLocaleString("ms-MY", {timeZone: "Asia/Kuala_Lumpur"});
         const updates = {};
-        const wakilLabel = "WAKIL (" + leaderName + ")";
 
-        // 1. Rekod untuk Ketua (Tuan Badan)
-        leaderUniqueKeys.forEach(k => {
-            updates["participants/" + k + "/status"] = "COLLECTED";
-            updates["participants/" + k + "/timestamp"] = now;
-            updates["participants/" + k + "/collected_by"] = "TUAN BADAN";
-        });
-
-        // 2. Rekod untuk Wakil
-        proxyUniqueKeys.forEach(k => {
-            updates["participants/" + k + "/status"] = "COLLECTED";
-            updates["participants/" + k + "/timestamp"] = now;
-            updates["participants/" + k + "/collected_by"] = wakilLabel;
+        pendaftaranToUpdate.forEach(item => {
+            updates["participants/" + item.key + "/status"] = "COLLECTED";
+            updates["participants/" + item.key + "/timestamp"] = now;
+            updates["participants/" + item.key + "/collected_by"] = item.role;
         });
 
         db.ref().update(updates).then(() => {
-            alert("✅ BERJAYA!\nSemua rekod transaksi telah dikemaskini.");
+            alert("✅ BERJAYA!\n" + pendaftaranToUpdate.length + " pendaftaran telah dikemaskini.");
             location.reload();
         });
     }
