@@ -21,6 +21,7 @@
         .btn-add { background: #3498db; color: white; margin-bottom: 10px; }
         .delete-btn { background: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; float: right; border-radius: 5px; width: auto; margin-top: -5px;}
         hr { border: 0; border-top: 1px solid #ddd; margin: 15px 0; }
+        .timestamp-info { font-size: 11px; color: #e67e22; font-weight: bold; margin-top: 3px; display: block; }
     </style>
 </head>
 <body>
@@ -62,10 +63,9 @@
     const db = firebase.database();
 
     let leaderName = "";
-    let pendaftaranToUpdate = []; // Menyimpan uniqueKeys untuk disahkan
-    let scannedICs = []; // Untuk elak scan orang yang sama dua kali
+    let pendaftaranToUpdate = []; 
+    let scannedICs = []; 
 
-    // --- SETUP SCANNER (SENTIASA AKTIF) ---
     const html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
         try {
@@ -75,12 +75,10 @@
         } catch (e) { console.log("Bukan QR Google Script"); }
     });
 
-    // --- FUNGSI PROSES INPUT (QR ATAU TAIP) ---
     function processInput(ic) {
         const cleanIC = ic.replace(/\D/g, "");
         if (!cleanIC || scannedICs.includes(cleanIC)) return;
         
-        // Bunyi 'beep' atau haptic feedback jika perlu boleh tambah sini
         scannedICs.push(cleanIC);
         document.getElementById("manual-ic").value = "";
         
@@ -95,7 +93,6 @@
             document.getElementById("transaction-ui").style.display = "block";
             const container = document.getElementById("cards-container");
             
-            // Orang pertama yang discan/taip akan jadi KETUA
             const isLeader = (leaderName === "");
 
             Object.keys(results).forEach((key) => {
@@ -107,7 +104,6 @@
                     pendaftaranToUpdate.push({ key: key, role: isLeader ? "TUAN BADAN" : "WAKIL (" + leaderName + ")" });
                 }
 
-                // Cipta Kad Paparan
                 const card = document.createElement("div");
                 card.className = `card ${isAlreadyCollected ? 'collected-card' : ''}`;
                 card.innerHTML = `
@@ -115,7 +111,10 @@
                     <b>${data.name}</b><br>
                     <span class="bib">${data.bib}</span><br>
                     <small>${data.category} | ${data.size}</small>
-                    ${isAlreadyCollected ? `<br><small style="color:orange;">SUDAH DIAMBIL: ${data.collected_by || '?'}</small>` : ''}
+                    ${isAlreadyCollected ? 
+                        `<span class="timestamp-info">SUDAH DIAMBIL: ${data.collected_by || '?'}</span>
+                         <span class="timestamp-info">PADA: ${data.timestamp || '-'}</span>` 
+                        : ''}
                 `;
                 container.appendChild(card);
             });
@@ -125,7 +124,6 @@
         });
     }
 
-    // --- FUNGSI HANTAR SEMUA ---
     function submitAll() {
         if (pendaftaranToUpdate.length === 0) return alert("Tiada pendaftaran baru untuk disahkan.");
 
